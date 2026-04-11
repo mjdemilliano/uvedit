@@ -36,7 +36,7 @@ def find_pyproject() -> Path:
     sys.exit(1)
 
 
-def get_sources(doc: tomlkit.TOMLDocument) -> tomlkit.Table:
+def get_sources(doc: tomlkit.TOMLDocument) -> tomlkit.container.Container:
     """Return [tool.uv.sources], creating intermediate tables if needed."""
     if "tool" not in doc:
         doc.add("tool", tomlkit.table())
