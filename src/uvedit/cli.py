@@ -72,7 +72,9 @@ def cmd_local(args: argparse.Namespace) -> None:
         save_savedstate(project_dir, saved)
         ensure_gitignore_entry(project_dir, SAVEDSTATE_FILE)
 
-    rel_path = checkout_dir.relative_to(project_dir)
+    rel_path = checkout_dir.relative_to(project_dir) / current_source.get(
+        "subdirectory", "."
+    )
 
     new_source = tomlkit.inline_table()
     new_source.append("path", rel_path)
@@ -135,7 +137,7 @@ def main(argv: list[str] | None = None) -> None:
     ).completer = available_packages_completer
 
     p_local.add_argument(
-        "--dir", metavar="PATH", help="Where to clone (default: ../PACKAGE)"
+        "--dir", metavar="PATH", help="Where to clone (default: ../PACKAGE)", type=Path
     )
     p_local.set_defaults(func=cmd_local)
 
