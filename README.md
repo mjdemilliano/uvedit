@@ -51,11 +51,6 @@ uv sync
 
 ## Installation
 
-Make the script executable and place it somewhere on your `PATH`:
-
-```bash
-chmod +x uvedit
-cp uvedit ~/.local/bin/
+```console
+uv tool install 'git+https://github.com/mjdemilliano/uvedit'
 ```
-
-No other installation is needed. The shebang line (`#!/usr/bin/env -S uv run --script`) causes `uv` to automatically install the script's dependency (`tomlkit`) in an isolated environment on first run.

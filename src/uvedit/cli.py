@@ -1,82 +1,13 @@
-#!/usr/bin/env -S uv run --script
-# /// script
-# requires-python = ">=3.11"
-# dependencies = [
-#   "tomlkit",
-# ]
-# ///
-"""
-uvedit - Switch uv dependencies between local checkouts and remote git sources.
-
-Usage:
-  uvedit local <package> [--dir PATH]   Use a local editable checkout (clones if needed)
-  uvedit restore <package>              Restore the original remote git source
-"""
-
 import argparse
-import os
 import subprocess
 import sys
-import tomllib
 from pathlib import Path
 
 import tomlkit
 
-SAVEDSTATE_FILE = ".uvedit.toml"
-
-
-def find_pyproject() -> Path:
-    path = Path.cwd()
-    while path != path.parent:
-        candidate = path / "pyproject.toml"
-        if candidate.exists():
-            return candidate
-        path = path.parent
-    print("Error: No pyproject.toml found in current or parent directories.")
-    sys.exit(1)
-
-
-def get_sources(doc: tomlkit.TOMLDocument) -> tomlkit.container.Container:
-    """Return [tool.uv.sources], creating intermediate tables if needed."""
-    if "tool" not in doc:
-        doc.add("tool", tomlkit.table())
-    if "uv" not in doc["tool"]:
-        doc["tool"].add("uv", tomlkit.table())
-    if "sources" not in doc["tool"]["uv"]:
-        doc["tool"]["uv"].add("sources", tomlkit.table())
-    return doc["tool"]["uv"]["sources"]
-
-
-def load_savedstate(project_dir: Path) -> dict:
-    path = project_dir / SAVEDSTATE_FILE
-    if path.exists():
-        with open(path, "rb") as f:
-            return tomllib.load(f)
-    return {}
-
-
-def save_savedstate(project_dir: Path, data: dict) -> None:
-    path = project_dir / SAVEDSTATE_FILE
-    if not data:
-        path.unlink(missing_ok=True)
-        return
-    doc = tomlkit.document()
-    for pkg, source in data.items():
-        tbl = tomlkit.inline_table()
-        for k, v in source.items():
-            tbl.append(k, v)
-        doc.add(pkg, tbl)
-    path.write_text(tomlkit.dumps(doc))
-
-
-def ensure_gitignore_entry(project_dir: Path, entry: str) -> None:
-    gitignore = project_dir / ".gitignore"
-    if not gitignore.exists():
-        return
-    lines = gitignore.read_text().splitlines()
-    if entry not in lines:
-        with open(gitignore, "a") as f:
-            f.write(f"\n{entry}\n")
+from uvedit.configuration import find_pyproject, get_sources
+from uvedit.git import ensure_gitignore_entry
+from uvedit.save_state import SAVEDSTATE_FILE, load_savedstate, save_savedstate
 
 
 def cmd_local(args: argparse.Namespace) -> None:
@@ -97,7 +28,11 @@ def cmd_local(args: argparse.Namespace) -> None:
         sys.exit(1)
 
     git_url = current_source["git"]
-    checkout_dir = Path(args.dir).resolve() if args.dir else (project_dir.parent / package).resolve()
+    checkout_dir = (
+        Path(args.dir).resolve()
+        if args.dir
+        else (project_dir.parent / package).resolve()
+    )
 
     if not checkout_dir.exists():
         print(f"Cloning {git_url} into {checkout_dir} ...")
@@ -115,7 +50,7 @@ def cmd_local(args: argparse.Namespace) -> None:
         save_savedstate(project_dir, saved)
         ensure_gitignore_entry(project_dir, SAVEDSTATE_FILE)
 
-    rel_path = os.path.relpath(checkout_dir, project_dir)
+    rel_path = checkout_dir.relative_to(project_dir)
 
     new_source = tomlkit.inline_table()
     new_source.append("path", rel_path)
@@ -134,7 +69,9 @@ def cmd_restore(args: argparse.Namespace) -> None:
 
     saved = load_savedstate(project_dir)
     if package not in saved:
-        print(f"Error: No saved source for '{package}'. Was 'uvedit local {package}' run first?")
+        print(
+            f"Error: No saved source for '{package}'. Was 'uvedit local {package}' run first?"
+        )
         sys.exit(1)
 
     original = saved[package]
@@ -155,7 +92,10 @@ def cmd_restore(args: argparse.Namespace) -> None:
     print("Run 'uv sync' to apply.")
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
+    if not argv:
+        argv = sys.argv
+
     parser = argparse.ArgumentParser(
         description="Switch uv dependencies between local checkouts and remote git sources.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -163,18 +103,18 @@ def main() -> None:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    p_local = sub.add_parser("local", help="Use a local editable checkout (clones if needed)")
+    p_local = sub.add_parser(
+        "local", help="Use a local editable checkout (clones if needed)"
+    )
     p_local.add_argument("package", help="Package name as it appears in pyproject.toml")
-    p_local.add_argument("--dir", metavar="PATH", help="Where to clone (default: ../PACKAGE)")
+    p_local.add_argument(
+        "--dir", metavar="PATH", help="Where to clone (default: ../PACKAGE)"
+    )
     p_local.set_defaults(func=cmd_local)
 
     p_restore = sub.add_parser("restore", help="Restore the original remote git source")
     p_restore.add_argument("package", help="Package name")
     p_restore.set_defaults(func=cmd_restore)
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv[1:])
     args.func(args)
-
-
-if __name__ == "__main__":
-    main()

@@ -1,0 +1,29 @@
+[project]
+name = "uvedit"
+version = "1.0.0"
+dependencies = [
+  "tomlkit",
+]
+authors = [{ name = "Martijn de Milliano" }, { name = "Max Suurland" }]
+description = "Tool to switch `uv` dependencies between local editable checkouts and remote git sources."
+readme = "README.md"
+license = "MIT"
+keywords = ["uv", "uv-sources"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Intended Audience :: Developers",
+]
+requires-python = ">=3.10"
+license-files = ["LICENSE"]
+
+[project.optional-dependencies]
+
+[project.scripts]
+uvedit = "uvedit.cli:main"
+
+[project.urls]
+# Homepage = ""
+# Documentation = ""
+Repository = "https://github.com/mjdemilliano/uvedit"
+Issues = "https://github.com/mjdemilliano/uvedit/issues"
+# Changelog = "https://github.com/mjdemilliano/uvedit/blob/master/CHANGELOG.md"
