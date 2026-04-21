@@ -51,6 +51,20 @@ uv sync
 
 ## Installation
 
+Install using uv:
+
 ```console
 uv tool install 'git+https://github.com/mjdemilliano/uvedit'
+```
+
+Install using pipx:
+
+```console
+pipx install 'git+https://github.com/mjdemilliano/uvedit'
+```
+
+Install using pip:
+
+```console
+pip install 'git+https://github.com/mjdemilliano/uvedit'
 ```
