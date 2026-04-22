@@ -2,10 +2,10 @@
 
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 import tomlkit
-import tomllib
 
 
 def run_uvedit_cmd(project_dir: Path, *args) -> tuple[int, str, str]:
@@ -50,9 +50,7 @@ def saved_state_exists(project_dir: Path) -> bool:
 class TestBasicLocalRestore:
     """Test basic local <-> restore workflow."""
 
-    def test_local_then_restore_default_path(
-        self, project_with_git_source: Path
-    ) -> None:
+    def test_local_then_restore_default_path(self, project_with_git_source: Path) -> None:
         """Switch to local, verify state, then restore to git source."""
         project = project_with_git_source
 
@@ -381,9 +379,5 @@ class TestRoundTrips:
             assert rc == 0, f"Cycle {cycle}: restore failed: {stderr}"
 
             sources = get_sources(project)
-            assert sources["dummy-pkg"]["git"] == git_url, (
-                f"Cycle {cycle}: git mismatch"
-            )
-            assert "path" not in sources["dummy-pkg"], (
-                f"Cycle {cycle}: path still present"
-            )
+            assert sources["dummy-pkg"]["git"] == git_url, f"Cycle {cycle}: git mismatch"
+            assert "path" not in sources["dummy-pkg"], f"Cycle {cycle}: path still present"
