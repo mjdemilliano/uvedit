@@ -113,9 +113,7 @@ class TestBasicLocalRestore:
         custom_dir = project.parent / "my_custom_checkout"
 
         # Run: uvedit local dummy-pkg --dir <custom_dir>
-        returncode, stdout, stderr = run_uvedit_cmd(
-            project, "local", "dummy-pkg", "--dir", str(custom_dir)
-        )
+        returncode, stdout, stderr = run_uvedit_cmd(project, "local", "dummy-pkg", "--dir", str(custom_dir))
         assert returncode == 0, f"Failed: {stderr}"
         assert "Cloning" in stdout or "Using existing" in stdout
 
@@ -147,9 +145,7 @@ class TestBasicLocalRestore:
 class TestWithSubdirectory:
     """Test local <-> restore with subdirectory in git source."""
 
-    def test_local_restore_with_subdirectory(
-        self, project_with_git_source_and_subdir: tuple[Path, Path]
-    ) -> None:
+    def test_local_restore_with_subdirectory(self, project_with_git_source_and_subdir: tuple[Path, Path]) -> None:
         """Test when git source has subdirectory field."""
         project, repo = project_with_git_source_and_subdir
 
@@ -199,9 +195,7 @@ class TestWithSubdirectory:
         custom_dir = project.parent / "special_checkout"
 
         # Run local with custom dir
-        returncode, stdout, stderr = run_uvedit_cmd(
-            project, "local", "sub-pkg", "--dir", str(custom_dir)
-        )
+        returncode, stdout, stderr = run_uvedit_cmd(project, "local", "sub-pkg", "--dir", str(custom_dir))
         assert returncode == 0, f"Failed: {stderr}"
 
         # Checkout should be at custom location

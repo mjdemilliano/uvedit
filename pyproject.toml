@@ -25,11 +25,8 @@ extra = [
 uvedit = "uvedit.cli:main"
 
 [project.urls]
-# Homepage = ""
-# Documentation = ""
 Repository = "https://github.com/mjdemilliano/uvedit"
 Issues = "https://github.com/mjdemilliano/uvedit/issues"
-# Changelog = "https://github.com/mjdemilliano/uvedit/blob/master/CHANGELOG.md"
 
 [build-system]
 requires = ["uv_build >= 0.11.7, <0.12.0"]
@@ -51,7 +48,7 @@ addopts = [
 ]
 
 [tool.ruff]
-line-length = 100
+line-length = 120
 target-version = "py311"
 
 [tool.ruff.lint]

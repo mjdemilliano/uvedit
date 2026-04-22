@@ -55,9 +55,7 @@ def cmd_local(args: argparse.Namespace) -> None:
         sys.exit(1)
 
     git_url = current_source["git"]
-    checkout_dir = (
-        Path(args.dir).resolve() if args.dir else (project_dir.parent / package).resolve()
-    )
+    checkout_dir = Path(args.dir).resolve() if args.dir else (project_dir.parent / package).resolve()
 
     if not checkout_dir.exists():
         print(f"Cloning {git_url} into {checkout_dir} ...")
@@ -117,9 +115,7 @@ def cmd_local(args: argparse.Namespace) -> None:
         save_savedstate(project_dir, saved)
         ensure_gitignore_entry(project_dir, SAVEDSTATE_FILE)
 
-    rel_path = Path(os.path.relpath(checkout_dir, project_dir)) / current_source.get(
-        "subdirectory", "."
-    )
+    rel_path = Path(os.path.relpath(checkout_dir, project_dir)) / current_source.get("subdirectory", ".")
 
     new_source = tomlkit.inline_table()
     new_source.append("path", str(rel_path))
@@ -180,9 +176,7 @@ def main(argv: list[str] | None = None) -> None:
         help="Package name as it appears in pyproject.toml",
     ).completer = available_packages_completer
 
-    p_local.add_argument(
-        "--dir", metavar="PATH", help="Where to clone (default: ../PACKAGE)", type=Path
-    )
+    p_local.add_argument("--dir", metavar="PATH", help="Where to clone (default: ../PACKAGE)", type=Path)
     p_local.set_defaults(func=cmd_local)
 
     p_restore = sub.add_parser("restore", help="Restore the original remote git source")
