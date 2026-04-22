@@ -381,3 +381,89 @@ class TestRoundTrips:
             sources = get_sources(project)
             assert sources["dummy-pkg"]["git"] == git_url, f"Cycle {cycle}: git mismatch"
             assert "path" not in sources["dummy-pkg"], f"Cycle {cycle}: path still present"
+
+
+class TestCheckoutRevisions:
+    """Test that rev/branch/tag are properly checked out."""
+
+    def test_local_checks_out_branch(self, tmp_path: Path) -> None:
+        """Test that local checks out the specified branch."""
+        # Create a git repo with multiple branches
+        repo = tmp_path / "multi_branch_repo"
+        repo.mkdir()
+
+        subprocess.run(["git", "init"], cwd=repo, check=True, capture_output=True)
+        subprocess.run(
+            ["git", "config", "user.email", "test@example.com"],
+            cwd=repo,
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Test User"],
+            cwd=repo,
+            check=True,
+            capture_output=True,
+        )
+
+        # Create main branch
+        (repo / "main.txt").write_text("main branch")
+        subprocess.run(["git", "add", "."], cwd=repo, check=True, capture_output=True)
+        subprocess.run(
+            ["git", "commit", "-m", "main"],
+            cwd=repo,
+            check=True,
+            capture_output=True,
+        )
+
+        # Create develop branch
+        subprocess.run(
+            ["git", "checkout", "-b", "develop"],
+            cwd=repo,
+            check=True,
+            capture_output=True,
+        )
+        (repo / "develop.txt").write_text("develop branch")
+        (repo / "main.txt").unlink()
+        subprocess.run(["git", "add", "."], cwd=repo, check=True, capture_output=True)
+        subprocess.run(
+            ["git", "commit", "-m", "develop"],
+            cwd=repo,
+            check=True,
+            capture_output=True,
+        )
+
+        # Create project with develop branch source
+        project = tmp_path / "project"
+        project.mkdir()
+
+        doc = tomlkit.document()
+        doc.add("project", tomlkit.table())
+        doc["project"].add("name", "my-project")
+        doc["project"].add("dependencies", ["multi-pkg"])
+
+        tool = tomlkit.table()
+        uv = tomlkit.table()
+        sources = tomlkit.table()
+
+        source_entry = tomlkit.inline_table()
+        source_entry["git"] = repo.as_uri()
+        source_entry["branch"] = "develop"
+        sources["multi-pkg"] = source_entry
+
+        uv["sources"] = sources
+        tool["uv"] = uv
+        doc["tool"] = tool
+
+        (project / "pyproject.toml").write_text(tomlkit.dumps(doc))
+        (project / ".gitignore").write_text("*.pyc\n")
+
+        # Run local
+        rc, _, stderr = run_uvedit_cmd(project, "local", "multi-pkg")
+        assert rc == 0, f"Failed: {stderr}"
+
+        # Verify checkout is on develop branch with develop.txt
+        checkout = project.parent / "multi-pkg"
+        assert checkout.exists()
+        assert (checkout / "develop.txt").exists(), "Not on develop branch"
+        assert not (checkout / "main.txt").exists(), "On main branch, not develop"

@@ -61,13 +61,55 @@ def cmd_local(args: argparse.Namespace) -> None:
 
     if not checkout_dir.exists():
         print(f"Cloning {git_url} into {checkout_dir} ...")
-        result = subprocess.run(["git", "clone", git_url, str(checkout_dir)])
+
+        # Build git clone command with branch if specified
+        clone_cmd = ["git", "clone"]
+
+        # If branch is specified, use -b flag
+        if "branch" in current_source:
+            clone_cmd.extend(["-b", current_source["branch"]])
+
+        clone_cmd.extend([git_url, str(checkout_dir)])
+        result = subprocess.run(clone_cmd)
         if result.returncode != 0:
             print("Error: git clone failed.", file=sys.stderr)
             sys.exit(1)
+
     else:
         print(f"Using existing checkout at {checkout_dir}", file=sys.stderr)
+        try:
+            subprocess.run(["git", "fetch", "--all"], check=True, capture_output=True, text=True)
+        except subprocess.CalledProcessError:
+            pass
 
+    # Check out specific ref
+    if "tag" in current_source:
+        print(f"Checking out tag {current_source['tag']} ...")
+        result = subprocess.run(["git", "checkout", current_source["tag"]], cwd=checkout_dir)
+        if result.returncode != 0:
+            print(
+                f"Error: git checkout tag {current_source['tag']} failed.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+    elif "rev" in current_source:
+        print(f"Checking out revision {current_source['rev']} ...")
+        result = subprocess.run(["git", "checkout", current_source["rev"]], cwd=checkout_dir)
+        if result.returncode != 0:
+            print(
+                f"Error: git checkout revision {current_source['rev']} failed.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+    elif "branch" in current_source:
+        print(f"Checking out branch {current_source['branch']} ...")
+        result = subprocess.run(["git", "checkout", current_source["branch"]], cwd=checkout_dir)
+        if result.returncode != 0:
+            print(
+                f"Error: git checkout branch {current_source['branch']} failed.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
     # Persist original source so restore can bring it back
     saved = load_savedstate(project_dir)
     if package not in saved:
