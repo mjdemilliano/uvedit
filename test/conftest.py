@@ -32,9 +32,7 @@ def dummy_git_repo(tmp_path: Path) -> Path:
     )
 
     # Create a minimal Python package
-    (repo / "pyproject.toml").write_text(
-        '[project]\nname = "dummy-pkg"\nversion = "0.1.0"\n'
-    )
+    (repo / "pyproject.toml").write_text('[project]\nname = "dummy-pkg"\nversion = "0.1.0"\n')
     (repo / "README.md").write_text("# Dummy Package\n")
 
     # Commit
@@ -112,9 +110,7 @@ def project_with_git_source_and_subdir(tmp_path: Path) -> tuple[Path, Path]:
     # Create subdirectory with package
     subdir = repo / "subpkg"
     subdir.mkdir()
-    (subdir / "pyproject.toml").write_text(
-        '[project]\nname = "sub-pkg"\nversion = "0.1.0"\n'
-    )
+    (subdir / "pyproject.toml").write_text('[project]\nname = "sub-pkg"\nversion = "0.1.0"\n')
     (repo / "README.md").write_text("# Repo with Subdir\n")
 
     subprocess.run(["git", "add", "."], cwd=repo, check=True, capture_output=True)

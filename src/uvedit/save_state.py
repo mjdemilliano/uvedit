@@ -1,12 +1,13 @@
+import tomllib
 from pathlib import Path
+from typing import Any
 
 import tomlkit
-import tomllib
 
 SAVEDSTATE_FILE = ".uvedit.toml"
 
 
-def load_savedstate(project_dir: Path) -> dict:
+def load_savedstate(project_dir: Path) -> dict[str, Any]:
     path = project_dir / SAVEDSTATE_FILE
     if path.exists():
         with open(path, "rb") as f:
@@ -14,7 +15,7 @@ def load_savedstate(project_dir: Path) -> dict:
     return {}
 
 
-def save_savedstate(project_dir: Path, data: dict) -> None:
+def save_savedstate(project_dir: Path, data: dict[str, Any]) -> None:
     path = project_dir / SAVEDSTATE_FILE
     if not data:
         path.unlink(missing_ok=True)

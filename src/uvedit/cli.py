@@ -26,9 +26,7 @@ def get_available_packages() -> list[str]:
         return []
 
 
-def available_packages_completer(
-    prefix, parsed_args, **kwargs
-) -> Generator[str, None, None]:
+def available_packages_completer(prefix, parsed_args, **kwargs) -> Generator[str, None, None]:
     resource = get_available_packages()
     return (member for member in resource if member.startswith(prefix))
 
@@ -58,9 +56,7 @@ def cmd_local(args: argparse.Namespace) -> None:
 
     git_url = current_source["git"]
     checkout_dir = (
-        Path(args.dir).resolve()
-        if args.dir
-        else (project_dir.parent / package).resolve()
+        Path(args.dir).resolve() if args.dir else (project_dir.parent / package).resolve()
     )
 
     if not checkout_dir.exists():
@@ -135,9 +131,7 @@ def main(argv: list[str] | None = None) -> None:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    p_local = sub.add_parser(
-        "local", help="Use a local editable checkout (clones if needed)"
-    )
+    p_local = sub.add_parser("local", help="Use a local editable checkout (clones if needed)")
 
     p_local.add_argument(
         "package",
@@ -150,9 +144,7 @@ def main(argv: list[str] | None = None) -> None:
     p_local.set_defaults(func=cmd_local)
 
     p_restore = sub.add_parser("restore", help="Restore the original remote git source")
-    p_restore.add_argument(
-        "package", help="Package name"
-    ).completer = available_packages_completer
+    p_restore.add_argument("package", help="Package name").completer = available_packages_completer
     p_restore.set_defaults(func=cmd_restore)
 
     try:
