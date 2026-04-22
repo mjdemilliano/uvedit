@@ -1,10 +1,11 @@
 # PYTHON_ARGCOMPLETE_OK
 import argparse
-from functools import lru_cache
+import os
 import subprocess
 import sys
-from pathlib import Path
 from collections.abc import Generator
+from functools import lru_cache
+from pathlib import Path
 
 import tomlkit
 
@@ -42,11 +43,17 @@ def cmd_local(args: argparse.Namespace) -> None:
     current_source = sources.get(package)
 
     if current_source and "path" in current_source:
-        print(f"'{package}' already uses a local checkout: {current_source['path']}")
+        print(
+            f"'{package}' already uses a local checkout: {current_source['path']}",
+            file=sys.stderr,
+        )
         return
 
     if not current_source or "git" not in current_source:
-        print(f"Error: No git source found for '{package}' in [tool.uv.sources].")
+        print(
+            f"Error: No git source found for '{package}' in [tool.uv.sources].",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     git_url = current_source["git"]
@@ -60,10 +67,10 @@ def cmd_local(args: argparse.Namespace) -> None:
         print(f"Cloning {git_url} into {checkout_dir} ...")
         result = subprocess.run(["git", "clone", git_url, str(checkout_dir)])
         if result.returncode != 0:
-            print("Error: git clone failed.")
+            print("Error: git clone failed.", file=sys.stderr)
             sys.exit(1)
     else:
-        print(f"Using existing checkout at {checkout_dir}")
+        print(f"Using existing checkout at {checkout_dir}", file=sys.stderr)
 
     # Persist original source so restore can bring it back
     saved = load_savedstate(project_dir)
@@ -72,18 +79,18 @@ def cmd_local(args: argparse.Namespace) -> None:
         save_savedstate(project_dir, saved)
         ensure_gitignore_entry(project_dir, SAVEDSTATE_FILE)
 
-    rel_path = checkout_dir.relative_to(project_dir) / current_source.get(
+    rel_path = Path(os.path.relpath(checkout_dir, project_dir)) / current_source.get(
         "subdirectory", "."
     )
 
     new_source = tomlkit.inline_table()
-    new_source.append("path", rel_path)
+    new_source.append("path", str(rel_path))
     new_source.append("editable", True)
     sources[package] = new_source
 
     pyproject_path.write_text(tomlkit.dumps(doc))
     print(f"Switched '{package}' to local editable checkout at '{rel_path}'.")
-    print("Run 'uv sync' to apply.")
+    print("Run 'uv sync' to apply.", file=sys.stderr)
 
 
 def cmd_restore(args: argparse.Namespace) -> None:
@@ -94,7 +101,8 @@ def cmd_restore(args: argparse.Namespace) -> None:
     saved = load_savedstate(project_dir)
     if package not in saved:
         print(
-            f"Error: No saved source for '{package}'. Was 'uvedit local {package}' run first?"
+            f"Error: No saved source for '{package}'. Was 'uvedit local {package}' run first?",
+            file=sys.stderr,
         )
         sys.exit(1)
 
@@ -113,7 +121,7 @@ def cmd_restore(args: argparse.Namespace) -> None:
     save_savedstate(project_dir, saved)
 
     print(f"Restored '{package}' to remote source: {dict(original)}")
-    print("Run 'uv sync' to apply.")
+    print("Run 'uv sync' to apply.", file=sys.stderr)
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -142,9 +150,9 @@ def main(argv: list[str] | None = None) -> None:
     p_local.set_defaults(func=cmd_local)
 
     p_restore = sub.add_parser("restore", help="Restore the original remote git source")
-    p_restore.add_argument("package", help="Package name").completer = (
-        available_packages_completer
-    )
+    p_restore.add_argument(
+        "package", help="Package name"
+    ).completer = available_packages_completer
     p_restore.set_defaults(func=cmd_restore)
 
     try:
